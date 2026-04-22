@@ -1,0 +1,3 @@
+dataset,label_column,rows,positive_rate,unique_labels
+left,income,45222,0.2478439697492371,2
+right,income,48841,0.2393276140947155,2

@@ -4,3 +4,7 @@ scipy
 networkx
 tensorflow-privacy
 mbi
+scikit-learn
+matplotlib
+seaborn
+pytest
