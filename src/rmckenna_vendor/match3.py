@@ -1,9 +1,11 @@
 from mechanism import Mechanism
 import mbi
-from mbi import Domain, Factor, FactoredInference, GraphicalModel, Dataset
+from mbi import Domain, Dataset
+from mbi.marginal_loss import LinearMeasurement
 import matrix
 import argparse
 import numpy as np
+import jax.numpy as jnp
 from scipy import sparse, optimize
 from functools import reduce
 import os
@@ -38,9 +40,23 @@ def transform_data(data, supports):
                 mapping[i] = idx
                 idx += 1
         assert idx == size
-        df[col] = df[col].map(mapping)
+        df[col] = df[col].map(mapping).astype(int)
     newdom = Domain.fromdict(newdom)
     return Dataset(df, newdom)
+
+
+def compressed_query(support, extra, scale=1.0):
+    support_idx = jnp.asarray(np.where(support)[0], dtype=int)
+    extra_idx = jnp.asarray(np.where(~support)[0], dtype=int)
+
+    def query(factor):
+        values = factor.datavector(flatten=False)
+        if extra_idx.size == 0:
+            return values[support_idx] / scale
+        tail = values[extra_idx].sum() / scale
+        return jnp.concatenate([values[support_idx], jnp.expand_dims(tail, 0)])
+
+    return query
 
 def reverse_data(data, supports):
     df = data.df.copy()
@@ -56,6 +72,7 @@ def reverse_data(data, supports):
         else:
             df.loc[mask, col] = np.random.choice(extra, mask.sum())
         df.loc[~mask, col] = idx[df.loc[~mask, col]]
+        df[col] = df[col].astype(int)
     newdom = Domain.fromdict(newdom)
     return Dataset(df, newdom)
 
@@ -137,15 +154,16 @@ class Match3(Mechanism):
 
             if sup.sum() == y.size:
                 y2 = y
-                I2 = matrix.Identity(y.size)
+                query = lambda factor: factor.datavector(flatten=False)
             else:
                 y2 = np.append(y[sup], y[~sup].sum())
-                I2 = np.ones(y2.size)
-                I2[-1] = 1.0 / np.sqrt(y.size - y2.size + 1.0)
-                y2[-1] /= np.sqrt(y.size - y2.size + 1.0)
-                I2 = sparse.diags(I2)
+                scale = np.sqrt(y.size - y2.size + 1.0)
+                y2[-1] /= scale
+                query = compressed_query(sup, ~sup, scale=scale)
 
-            self.measurements.append( (I2, y2/wgt, 1.0/wgt, proj) )
+            self.measurements.append(
+                LinearMeasurement(y2 / wgt, clique=proj, stddev=1.0 / wgt, query=query)
+            )
 
         self.supports = supports 
         # perform round 2 measurments over compressed domain
@@ -163,55 +181,21 @@ class Match3(Mechanism):
             ## Noise-addition step ##
             #########################
             hist = data.project(proj).datavector()
-            Q = matrix.Identity(hist.size)
-
-            noise = sigma*np.random.randn(Q.shape[0])
-            y = wgt*Q.dot(hist) + noise
-            self.measurements.append( (Q, y/wgt, 1.0/wgt, proj) )
+            noise = sigma*np.random.randn(hist.size)
+            y = wgt*hist + noise
+            self.measurements.append(
+                LinearMeasurement(y / wgt, clique=proj, stddev=1.0 / wgt)
+            )
 
     def postprocess(self):
-        iters = self.iters
-        domain = self.domain
-        engine = FactoredInference(domain,
-                                    structural_zeros={},
-                                    iters=500,
-                                    log=True,
-                                    warm_start=True,
-                                    elim_order=self.elimination_order)
-        self.engine = engine
-        cb = mbi.callbacks.Logger(engine)
-
-        if self.warmup:
-            engine._setup(self.measurements, None)
-            oneway = {}
-            for i in range(len(self.round1)):
-                p = self.round1[i]
-                y = self.measurements[i][1]
-                y = np.maximum(y, 1)
-                y /= y.sum()
-                oneway[p] = Factor(self.domain.project(p), y)
-            marginals = {}
-            for cl in engine.model.cliques:
-                marginals[cl] = reduce(lambda x,y: x*y, [oneway[p] for p in cl])
-            theta = engine.model.mle(marginals)
-            engine.potentials = theta
-            engine.marginals = engine.model.belief_propagation(theta)
-
-        checkpt = self.save[:-4] + '-checkpt.csv'
-        for i in range(self.iters // 500):
-            
-            engine.infer(self.measurements, engine='MD', callback=cb)
-
-            if i % 4 == 3:
-                self.synthetic = engine.model.synthetic_data()
-                self.synthetic = reverse_data(self.synthetic, self.supports)
-                self.transform_domain()
-                self.synthetic.to_csv(checkpt, index=False)
-   
-        if os.path.exists(checkpt):
-            os.remove(checkpt)
-
-        self.synthetic = engine.model.synthetic_data()
+        callback = mbi.callbacks.default(self.measurements, frequency=50)
+        self.model = mbi.estimation.mirror_descent(
+            self.domain,
+            self.measurements,
+            iters=self.iters,
+            callback_fn=callback,
+        )
+        self.synthetic = self.model.synthetic_data()
         self.synthetic = reverse_data(self.synthetic, self.supports)
 
 def default_params():

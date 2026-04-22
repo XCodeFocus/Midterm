@@ -9,5 +9,5 @@ pip install -r requirements.txt
 run:
 
 ```bash
-python src\rmckenna_vendor\match3.py --dataset ./data/adult.csv --specs ./data/adult-doamin.json --epsilon 1.0 --delta 2.2820544e-12 --save synthetic-1.0.csv  
+python src\rmckenna_vendor\match3.py --dataset ./data/adult.csv --specs ./data/adult-domain.json --epsilon 1.0 --delta 2.2820544e-12 --save synthetic-1.0.csv  
 
