@@ -85,7 +85,7 @@ It summarizes:
 
 ### Compare the existing outputs
 
-If your Python 3.11 environment is already active, you can compare `adult_k2.csv` with `outputs/synthetic-1.0.csv` directly:
+you can compare `adult_k2.csv` with `outputs/synthetic-1.0.csv` with:
 
 ```powershell
 python src\privacy_compare.py --left outputs\adult_k2.csv --right outputs\synthetic-1.0.csv --output-dir outputs\comparison_test
@@ -95,14 +95,6 @@ This writes:
 
 - `outputs/comparison_test/shared_columns.csv`
 - `outputs/comparison_test/label_balance.csv`
-
-### Command-line usage
-
-You can also use the same command with your activated environment:
-
-```powershell
-python src\privacy_compare.py --left outputs\adult_k2.csv --right outputs\synthetic-1.0.csv --output-dir outputs\comparison_test
-```
 
 ## 4. What the Outputs Mean
 
@@ -133,19 +125,15 @@ The K-anonymity notebook evaluates a Linear SVM with these metrics:
 
 The comparison utility currently focuses on data-level summaries rather than model metrics.
 
-## 6. Common Troubleshooting
+## 6. Troubleshooting
 
-### `ModuleNotFoundError: No module named 'mbi'`
+### `ModuleNotFoundError: No module named 'something'`
 
 Use the provided Python 3.11 environment and install dependencies with `pip install -r requirements.txt`.
 
 ### `ImportError` involving NumPy 2.x and pandas / pyarrow
 
-This usually means the wrong Python interpreter is being used. Run the project with `.venv311\Scripts\python.exe` instead of system Python.
-
-### `ValueError: Expected integer data, got object`
-
-This was fixed in `src/rmckenna_vendor/match3.py`. If you modify the code and see it again, make sure transformed columns are cast to `int` before building an `mbi.Dataset`.
+This usually means the wrong Python interpreter is being used. Run the project with python 3.11.
 
 ## 7. Reproducibility Checklist
 
@@ -156,7 +144,7 @@ To reproduce the current project state from scratch:
 3. Run `src/rmckenna_vendor/match3.py` to generate `outputs/synthetic-1.0.csv`.
 4. Open `notebooks/k_anonymity_experiment.ipynb` and run all cells.
 5. Run `src/privacy_compare.py` or the inline comparison command to generate comparison summaries.
-6. Inspect the CSV outputs in `outputs/` and write the report.
+6. Inspect the CSV outputs in `outputs/`.
 
 ## 8. Main Files
 
@@ -167,11 +155,10 @@ To reproduce the current project state from scratch:
 - `src/privacy_compare.py`: comparison utility for K-anonymity and DP outputs
 - `notebooks/k_anonymity_experiment.ipynb`: end-to-end K-anonymity experiment notebook
 
-## 9. Expected Project Workflow
+## 9. Project Workflow
 
 For the full assignment, run the project in this order:
 
 1. Generate the DP synthetic dataset with `match3.py`.
 2. Run the K-anonymity notebook to create the anonymized datasets and model results.
 3. Use `privacy_compare.py` to summarize differences between the K-anonymized data and the DP synthetic data.
-4. Write the report using the generated CSVs and the model metrics from the notebook.
