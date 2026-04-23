@@ -35,7 +35,7 @@ What this does:
 
 Expected output:
 
-- `outputs/synthetic-1.0.csv` in the outputs folder
+- `synthetic-1.0.csv` in the outputs folder
 - log messages showing the calibrated noise level and optimization progress
 
 ## 2. Run K-Anonymity Experiment
