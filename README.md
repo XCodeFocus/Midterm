@@ -133,23 +133,7 @@ The K-anonymity notebook evaluates a Linear SVM with these metrics:
 
 The comparison utility currently focuses on data-level summaries rather than model metrics.
 
-## 6. Running Tests
-
-The repo includes lightweight tests for the K-anonymity and comparison helpers.
-
-If `pytest` is installed in your environment, run:
-
-```powershell
-& ".venv311\Scripts\python.exe" -m pytest -q
-```
-
-If `pytest` is not installed, install it first:
-
-```powershell
-& ".venv311\Scripts\python.exe" -m pip install pytest
-```
-
-## 7. Common Troubleshooting
+## 6. Common Troubleshooting
 
 ### `ModuleNotFoundError: No module named 'mbi'`
 
@@ -163,15 +147,7 @@ This usually means the wrong Python interpreter is being used. Run the project w
 
 This was fixed in `src/rmckenna_vendor/match3.py`. If you modify the code and see it again, make sure transformed columns are cast to `int` before building an `mbi.Dataset`.
 
-### `pytest` not found
-
-Install it inside the project environment:
-
-```powershell
-& ".venv311\Scripts\python.exe" -m pip install pytest
-```
-
-## 8. Reproducibility Checklist
+## 7. Reproducibility Checklist
 
 To reproduce the current project state from scratch:
 
@@ -182,7 +158,7 @@ To reproduce the current project state from scratch:
 5. Run `src/privacy_compare.py` or the inline comparison command to generate comparison summaries.
 6. Inspect the CSV outputs in `outputs/` and write the report.
 
-## 9. Main Files
+## 8. Main Files
 
 - `src/rmckenna_vendor/match3.py`: differential privacy synthetic data generator
 - `src/rmckenna_vendor/mechanism.py`: shared data loading / output logic for the DP pipeline
@@ -191,7 +167,7 @@ To reproduce the current project state from scratch:
 - `src/privacy_compare.py`: comparison utility for K-anonymity and DP outputs
 - `notebooks/k_anonymity_experiment.ipynb`: end-to-end K-anonymity experiment notebook
 
-## 10. Expected Project Workflow
+## 9. Expected Project Workflow
 
 For the full assignment, run the project in this order:
 
@@ -199,7 +175,3 @@ For the full assignment, run the project in this order:
 2. Run the K-anonymity notebook to create the anonymized datasets and model results.
 3. Use `privacy_compare.py` to summarize differences between the K-anonymized data and the DP synthetic data.
 4. Write the report using the generated CSVs and the model metrics from the notebook.
-
-## License
-
-This project is for coursework use.
